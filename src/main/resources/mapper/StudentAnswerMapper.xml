@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.bishe.question.mapper.StudentAnswerMapper">
+
+    <resultMap id="studentAnswerMap" type="org.bishe.question.entity.StudentAnswer">
+        <id property="id" column="id"/>
+        <result property="examRecordId" column="exam_record_id"/>
+        <result property="examId" column="exam_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="studentAnswer" column="student_answer"/>
+        <result property="correctAnswer" column="correct_answer"/>
+        <result property="isCorrect" column="is_correct"/>
+        <result property="answerTime" column="answer_time"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="studentAnswerMap">SELECT * FROM student_answers WHERE id = #{id}</select>
+    <select id="findAll" resultMap="studentAnswerMap">SELECT * FROM student_answers ORDER BY id</select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO student_answers (exam_record_id, exam_id, student_id, question_id, student_answer, correct_answer, is_correct, answer_time, created_at, updated_at)
+        VALUES (#{examRecordId}, #{examId}, #{studentId}, #{questionId}, #{studentAnswer}, #{correctAnswer}, #{isCorrect}, #{answerTime}, NOW(), NOW())
+    </insert>
+
+    <update id="update">
+        UPDATE student_answers <set>
+            <if test="examRecordId != null">exam_record_id = #{examRecordId},</if>
+            <if test="examId != null">exam_id = #{examId},</if>
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="questionId != null">question_id = #{questionId},</if>
+            <if test="studentAnswer != null">student_answer = #{studentAnswer},</if>
+            <if test="correctAnswer != null">correct_answer = #{correctAnswer},</if>
+            <if test="isCorrect != null">is_correct = #{isCorrect},</if>
+            <if test="answerTime != null">answer_time = #{answerTime},</if>
+            updated_at = NOW()
+        </set> WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">DELETE FROM student_answers WHERE id = #{id}</delete>
+    <select id="count" resultType="long">SELECT COUNT(*) FROM student_answers</select>
+
+    <select id="findByExamRecordId" resultMap="studentAnswerMap">
+        SELECT * FROM student_answers WHERE exam_record_id = #{examRecordId}
+    </select>
+    <select id="findByExamRecordIdOrderByQuestionId" resultMap="studentAnswerMap">
+        SELECT * FROM student_answers WHERE exam_record_id = #{examRecordId} ORDER BY question_id
+    </select>
+    <select id="findByQuestionId" resultMap="studentAnswerMap">
+        SELECT * FROM student_answers WHERE question_id = #{questionId}
+    </select>
+    <select id="findByExamRecordIdAndQuestionId" resultMap="studentAnswerMap">
+        SELECT * FROM student_answers WHERE exam_record_id = #{examRecordId} AND question_id = #{questionId}
+    </select>
+
+    <select id="countByExamRecordId" resultType="long">
+        SELECT COUNT(*) FROM student_answers WHERE exam_record_id = #{examRecordId}
+    </select>
+    <select id="countByQuestionId" resultType="long">
+        SELECT COUNT(*) FROM student_answers WHERE question_id = #{questionId}
+    </select>
+
+    <select id="countCorrectByExamRecordId" resultType="long">
+        SELECT COUNT(*) FROM student_answers WHERE exam_record_id = #{examRecordId} AND is_correct = true
+    </select>
+    <select id="countWrongByExamRecordId" resultType="long">
+        SELECT COUNT(*) FROM student_answers WHERE exam_record_id = #{examRecordId} AND is_correct = false
+    </select>
+    <select id="countUnansweredByExamRecordId" resultType="long">
+        SELECT COUNT(*) FROM student_answers WHERE exam_record_id = #{examRecordId} AND (student_answer IS NULL OR student_answer = '')
+    </select>
+
+    <select id="getCorrectRateByQuestionId" resultType="double">
+        SELECT (COUNT(CASE WHEN is_correct = true THEN 1 END) * 100.0 / COUNT(*))
+        FROM student_answers WHERE question_id = #{questionId} AND is_correct IS NOT NULL
+    </select>
+
+    <select id="findAnsweredByExamRecordId" resultMap="studentAnswerMap">
+        SELECT * FROM student_answers WHERE exam_record_id = #{examRecordId} AND student_answer IS NOT NULL AND student_answer != ''
+    </select>
+    <select id="findUnansweredByExamRecordId" resultMap="studentAnswerMap">
+        SELECT * FROM student_answers WHERE exam_record_id = #{examRecordId} AND (student_answer IS NULL OR student_answer = '')
+    </select>
+    <select id="findCorrectByExamRecordId" resultMap="studentAnswerMap">
+        SELECT * FROM student_answers WHERE exam_record_id = #{examRecordId} AND is_correct = true
+    </select>
+    <select id="findWrongByExamRecordId" resultMap="studentAnswerMap">
+        SELECT * FROM student_answers WHERE exam_record_id = #{examRecordId} AND is_correct = false
+    </select>
+
+    <select id="existsByExamRecordIdAndQuestionId" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM student_answers WHERE exam_record_id = #{examRecordId} AND question_id = #{questionId}
+    </select>
+
+    <select id="findByAnswerTimeRange" resultMap="studentAnswerMap">
+        SELECT * FROM student_answers WHERE answer_time >= #{startTime} AND answer_time &lt;= #{endTime}
+    </select>
+    <select id="findRecentAnswers" resultMap="studentAnswerMap">
+        SELECT * FROM student_answers ORDER BY answer_time DESC LIMIT 10
+    </select>
+    <select id="findRecentAnswersByExamRecord" resultMap="studentAnswerMap">
+        SELECT * FROM student_answers WHERE exam_record_id = #{examRecordId} ORDER BY answer_time DESC
+    </select>
+    <select id="findRecentAnswersByQuestion" resultMap="studentAnswerMap">
+        SELECT * FROM student_answers WHERE question_id = #{questionId} ORDER BY answer_time DESC
+    </select>
+
+    <update id="updateStudentAnswer">
+        UPDATE student_answers SET student_answer = #{studentAnswer}, answer_time = #{answerTime}, updated_at = #{updateTime}
+        WHERE exam_record_id = #{examRecordId} AND question_id = #{questionId}
+    </update>
+    <update id="updateCorrectness">
+        UPDATE student_answers SET is_correct = #{isCorrect}, updated_at = #{updateTime}
+        WHERE exam_record_id = #{examRecordId} AND question_id = #{questionId}
+    </update>
+    <update id="updateCorrectAnswer">
+        UPDATE student_answers SET correct_answer = #{correctAnswer}, updated_at = #{updateTime}
+        WHERE exam_record_id = #{examRecordId} AND question_id = #{questionId}
+    </update>
+    <update id="clearAnswer">
+        UPDATE student_answers SET student_answer = NULL, answer_time = NULL, is_correct = NULL, updated_at = #{updateTime}
+        WHERE exam_record_id = #{examRecordId} AND question_id = #{questionId}
+    </update>
+
+    <delete id="deleteByExamRecordId">DELETE FROM student_answers WHERE exam_record_id = #{examRecordId}</delete>
+    <delete id="deleteByQuestionId">DELETE FROM student_answers WHERE question_id = #{questionId}</delete>
+    <delete id="deleteByExamRecordIdAndQuestionId">
+        DELETE FROM student_answers WHERE exam_record_id = #{examRecordId} AND question_id = #{questionId}
+    </delete>
+
+    <select id="getAnswerDistributionByQuestionId" resultType="map">
+        SELECT student_answer, COUNT(*) as cnt FROM student_answers
+        WHERE question_id = #{questionId} AND student_answer IS NOT NULL
+        GROUP BY student_answer ORDER BY cnt DESC
+    </select>
+
+    <select id="getQuestionStatisticsByExamId" resultType="map">
+        SELECT sa.question_id,
+               COUNT(sa.id) as total_answers,
+               COUNT(CASE WHEN sa.is_correct = true THEN 1 END) as correct_answers,
+               COUNT(CASE WHEN sa.is_correct = false THEN 1 END) as wrong_answers,
+               COUNT(CASE WHEN sa.student_answer IS NULL OR sa.student_answer = '' THEN 1 END) as unanswered_count
+        FROM student_answers sa
+        WHERE sa.exam_record_id IN (SELECT er.id FROM exam_records er WHERE er.exam_id = #{examId})
+        GROUP BY sa.question_id
+    </select>
+</mapper>

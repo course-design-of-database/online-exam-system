@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.bishe.question.mapper.WrongQuestionMapper">
+
+    <resultMap id="wrongQuestionMap" type="org.bishe.question.entity.WrongQuestion">
+        <id property="id" column="id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="examId" column="exam_id"/>
+        <result property="wrongCount" column="wrong_count"/>
+        <result property="mastered" column="mastered"/>
+        <result property="lastWrongAnswer" column="last_wrong_answer"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="updatedTime" column="updated_time"/>
+        <!-- Joined question fields -->
+        <result property="questionTitle" column="question_title"/>
+        <result property="questionContent" column="question_content"/>
+        <result property="questionType" column="question_type"/>
+        <result property="questionDifficulty" column="question_difficulty"/>
+        <result property="questionOptions" column="question_options"/>
+        <result property="correctAnswers" column="correct_answers"/>
+        <result property="correctAnswer" column="correct_answer"/>
+        <result property="questionTags" column="question_tags"/>
+    </resultMap>
+
+    <!-- Find by ID with question join -->
+    <select id="findById" resultMap="wrongQuestionMap">
+        SELECT
+            wq.*,
+            q.title AS question_title,
+            q.content AS question_content,
+            qt.name AS question_type,
+            q.difficulty AS question_difficulty,
+            q.options AS question_options,
+            q.correct_answers,
+            q.correct_answer,
+            q.tags AS question_tags
+        FROM wrong_questions wq
+        JOIN questions q ON wq.question_id = q.id
+        JOIN question_types qt ON q.type_id = qt.id
+        WHERE wq.id = #{id}
+    </select>
+
+    <!-- Find by student ID with question join -->
+    <select id="findByStudentId" resultMap="wrongQuestionMap">
+        SELECT
+            wq.*,
+            q.title AS question_title,
+            q.content AS question_content,
+            qt.name AS question_type,
+            q.difficulty AS question_difficulty,
+            q.options AS question_options,
+            q.correct_answers,
+            q.correct_answer,
+            q.tags AS question_tags
+        FROM wrong_questions wq
+        JOIN questions q ON wq.question_id = q.id
+        JOIN question_types qt ON q.type_id = qt.id
+        WHERE wq.student_id = #{studentId}
+        ORDER BY wq.updated_time DESC
+    </select>
+
+    <!-- Find by student ID and mastered status -->
+    <select id="findByStudentIdAndMastered" resultMap="wrongQuestionMap">
+        SELECT
+            wq.*,
+            q.title AS question_title,
+            q.content AS question_content,
+            qt.name AS question_type,
+            q.difficulty AS question_difficulty,
+            q.options AS question_options,
+            q.correct_answers,
+            q.correct_answer,
+            q.tags AS question_tags
+        FROM wrong_questions wq
+        JOIN questions q ON wq.question_id = q.id
+        JOIN question_types qt ON q.type_id = qt.id
+        WHERE wq.student_id = #{studentId} AND wq.mastered = #{mastered}
+        ORDER BY wq.updated_time DESC
+    </select>
+
+    <!-- Paginated query with optional mastered filter -->
+    <select id="findByStudentIdWithPagination" resultMap="wrongQuestionMap">
+        SELECT
+            wq.*,
+            q.title AS question_title,
+            q.content AS question_content,
+            qt.name AS question_type,
+            q.difficulty AS question_difficulty,
+            q.options AS question_options,
+            q.correct_answers,
+            q.correct_answer,
+            q.tags AS question_tags
+        FROM wrong_questions wq
+        JOIN questions q ON wq.question_id = q.id
+        JOIN question_types qt ON q.type_id = qt.id
+        WHERE wq.student_id = #{studentId}
+        <if test="mastered != null">
+            AND wq.mastered = #{mastered}
+        </if>
+        ORDER BY wq.updated_time DESC
+    </select>
+
+    <!-- Find by student_id and question_id (for existence check) -->
+    <select id="findByStudentIdAndQuestionId" resultMap="wrongQuestionMap">
+        SELECT * FROM wrong_questions
+        WHERE student_id = #{studentId} AND question_id = #{questionId}
+    </select>
+
+    <!-- Insert with ON DUPLICATE KEY UPDATE (increment wrong_count) -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO wrong_questions (student_id, question_id, exam_id, wrong_count, mastered, last_wrong_answer, created_time, updated_time)
+        VALUES (#{studentId}, #{questionId}, #{examId}, #{wrongCount}, #{mastered}, #{lastWrongAnswer}, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+            exam_id = VALUES(exam_id),
+            wrong_count = wrong_count + 1,
+            mastered = 0,
+            last_wrong_answer = VALUES(last_wrong_answer),
+            updated_time = NOW()
+    </insert>
+
+    <update id="update">
+        UPDATE wrong_questions
+        <set>
+            <if test="examId != null">exam_id = #{examId},</if>
+            <if test="wrongCount != null">wrong_count = #{wrongCount},</if>
+            <if test="mastered != null">mastered = #{mastered},</if>
+            <if test="lastWrongAnswer != null">last_wrong_answer = #{lastWrongAnswer},</if>
+            updated_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM wrong_questions WHERE id = #{id}
+    </delete>
+
+    <!-- Mark as mastered/unmastered for a specific student+question -->
+    <update id="markMastered">
+        UPDATE wrong_questions
+        SET mastered = #{mastered}, updated_time = NOW()
+        WHERE student_id = #{studentId} AND question_id = #{questionId}
+    </update>
+
+    <select id="countByStudentId" resultType="long">
+        SELECT COUNT(*) FROM wrong_questions WHERE student_id = #{studentId}
+    </select>
+
+    <select id="countByStudentIdAndMastered" resultType="long">
+        SELECT COUNT(*) FROM wrong_questions
+        WHERE student_id = #{studentId} AND mastered = #{mastered}
+    </select>
+
+</mapper>

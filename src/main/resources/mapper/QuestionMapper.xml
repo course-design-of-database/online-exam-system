@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.bishe.question.mapper.QuestionMapper">
+
+    <resultMap id="questionMap" type="org.bishe.question.entity.Question">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="typeId" column="type_id"/>
+        <result property="difficulty" column="difficulty"/>
+        <result property="options" column="options"/>
+        <result property="correctAnswers" column="correct_answers"/>
+        <result property="correctAnswer" column="correct_answer"/>
+        <result property="tags" column="tags"/>
+        <result property="status" column="status"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="updatedTime" column="updated_time"/>
+    </resultMap>
+
+    <select id="findById" resultMap="questionMap">SELECT * FROM questions WHERE id = #{id}</select>
+    <select id="findAll" resultMap="questionMap">SELECT * FROM questions ORDER BY id</select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO questions (title, content, type_id, difficulty, options, correct_answers, correct_answer, tags, status, created_by, created_time, updated_time)
+        VALUES (#{title}, #{content}, #{typeId}, #{difficulty}, #{options}, #{correctAnswers}, #{correctAnswer}, #{tags}, #{status}, #{createdBy}, NOW(), NOW())
+    </insert>
+
+    <update id="update">
+        UPDATE questions <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="typeId != null">type_id = #{typeId},</if>
+            <if test="difficulty != null">difficulty = #{difficulty},</if>
+            <if test="options != null">options = #{options},</if>
+            <if test="correctAnswers != null">correct_answers = #{correctAnswers},</if>
+            <if test="correctAnswer != null">correct_answer = #{correctAnswer},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="status != null">status = #{status},</if>
+            updated_time = NOW()
+        </set> WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">DELETE FROM questions WHERE id = #{id}</delete>
+    <select id="existsById" resultType="boolean">SELECT COUNT(*) > 0 FROM questions WHERE id = #{id}</select>
+    <select id="count" resultType="long">SELECT COUNT(*) FROM questions</select>
+
+    <select id="findByStatus" resultMap="questionMap">SELECT * FROM questions WHERE status = #{status}</select>
+    <select id="findByCreatedBy" resultMap="questionMap">
+        SELECT * FROM questions WHERE created_by = #{createdBy}
+    </select>
+    <select id="searchByKeyword" resultMap="questionMap">
+        SELECT * FROM questions WHERE title LIKE CONCAT('%',#{keyword},'%') OR content LIKE CONCAT('%',#{keyword},'%')
+    </select>
+    <select id="searchByKeywordIncludingTags" resultMap="questionMap">
+        SELECT * FROM questions WHERE title LIKE CONCAT('%',#{keyword},'%') OR content LIKE CONCAT('%',#{keyword},'%') OR tags LIKE CONCAT('%',#{keyword},'%')
+    </select>
+    <select id="searchQuestions" resultMap="questionMap">
+        SELECT * FROM questions
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (title LIKE CONCAT('%',#{keyword},'%') OR content LIKE CONCAT('%',#{keyword},'%') OR tags LIKE CONCAT('%',#{keyword},'%'))
+            </if>
+            <if test="type != null and type != ''">AND type_id = (SELECT id FROM question_types WHERE name = #{type})</if>
+            <if test="difficulty != null and difficulty != ''">AND difficulty = #{difficulty}</if>
+            AND status = 1
+        </where>
+    </select>
+
+    <!-- 聚合统计: countByType() returns List<Map> -->
+    <select id="countByType" resultType="map">
+        SELECT qt.name as type, COUNT(*) as cnt
+        FROM questions q
+        JOIN question_types qt ON q.type_id = qt.id
+        WHERE q.status = 1
+        GROUP BY qt.name
+    </select>
+    <!-- 聚合统计: countByDifficulty() returns List<Object[]> -->
+    <select id="countByDifficulty" resultType="map">
+        SELECT difficulty, COUNT(*) as cnt FROM questions WHERE status = 1 GROUP BY difficulty
+    </select>
+    <!-- count single type -->
+    <select id="countSingleType" resultType="long">
+        SELECT COUNT(*)
+        FROM questions q
+        JOIN question_types qt ON q.type_id = qt.id
+        WHERE qt.name = #{type}
+    </select>
+    <!-- count single difficulty -->
+    <select id="countSingleDifficulty" resultType="long">
+        SELECT COUNT(*) FROM questions WHERE difficulty = #{difficulty}
+    </select>
+
+    <select id="findRecentQuestions" resultMap="questionMap">
+        SELECT * FROM questions WHERE status = 1 ORDER BY created_time DESC
+    </select>
+    <select id="findByTag" resultMap="questionMap">
+        SELECT * FROM questions WHERE tags LIKE CONCAT('%',#{tag},'%') AND status = 1
+    </select>
+    <select id="existsByTitle" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM questions WHERE title = #{title}
+    </select>
+    <select id="existsByTitleAndIdNot" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM questions WHERE title = #{title} AND id != #{id}
+    </select>
+    <select id="findByStatusOrderByIdAsc" resultMap="questionMap">
+        SELECT * FROM questions WHERE status = #{status} ORDER BY id ASC
+    </select>
+</mapper>

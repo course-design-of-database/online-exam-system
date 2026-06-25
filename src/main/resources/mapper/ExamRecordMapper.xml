@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.bishe.question.mapper.ExamRecordMapper">
+
+    <resultMap id="examRecordMap" type="org.bishe.question.entity.ExamRecord">
+        <id property="id" column="id"/>
+        <result property="examId" column="exam_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="studentNumber" column="student_number"/>
+        <result property="studentName" column="student_name"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="submitTime" column="submit_time"/>
+        <result property="totalScore" column="total_score"/>
+        <result property="score" column="score"/>
+        <result property="correctCount" column="correct_count"/>
+        <result property="wrongCount" column="wrong_count"/>
+        <result property="unansweredCount" column="unanswered_count"/>
+        <result property="status" column="status"/>
+        <result property="durationMinutes" column="duration_minutes"/>
+        <result property="ipAddress" column="ip_address"/>
+        <result property="userAgent" column="user_agent"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="examRecordMap">SELECT * FROM exam_records WHERE id = #{id}</select>
+    <select id="findAll" resultMap="examRecordMap">SELECT * FROM exam_records ORDER BY id DESC</select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO exam_records (exam_id, student_id, student_number, student_name, start_time, end_time, submit_time, total_score, score, correct_count, wrong_count, unanswered_count, status, duration_minutes, ip_address, user_agent, created_at, updated_at)
+        VALUES (#{examId}, #{studentId}, #{studentNumber}, #{studentName}, #{startTime}, #{endTime}, #{submitTime}, #{totalScore}, #{score}, #{correctCount}, #{wrongCount}, #{unansweredCount}, #{status}, #{durationMinutes}, #{ipAddress}, #{userAgent}, NOW(), NOW())
+    </insert>
+
+    <update id="update">
+        UPDATE exam_records <set>
+            <if test="examId != null">exam_id = #{examId},</if>
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="studentNumber != null">student_number = #{studentNumber},</if>
+            <if test="studentName != null">student_name = #{studentName},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="submitTime != null">submit_time = #{submitTime},</if>
+            <if test="totalScore != null">total_score = #{totalScore},</if>
+            <if test="score != null">score = #{score},</if>
+            <if test="correctCount != null">correct_count = #{correctCount},</if>
+            <if test="wrongCount != null">wrong_count = #{wrongCount},</if>
+            <if test="unansweredCount != null">unanswered_count = #{unansweredCount},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="durationMinutes != null">duration_minutes = #{durationMinutes},</if>
+            <if test="ipAddress != null">ip_address = #{ipAddress},</if>
+            <if test="userAgent != null">user_agent = #{userAgent},</if>
+            updated_at = NOW()
+        </set> WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">DELETE FROM exam_records WHERE id = #{id}</delete>
+    <select id="count" resultType="long">SELECT COUNT(*) FROM exam_records</select>
+
+    <select id="findByExamId" resultMap="examRecordMap">SELECT * FROM exam_records WHERE exam_id = #{examId}</select>
+    <select id="findByStudentId" resultMap="examRecordMap">SELECT * FROM exam_records WHERE student_id = #{studentId}</select>
+    <select id="findByExamIdAndStudentId" resultMap="examRecordMap">
+        SELECT * FROM exam_records WHERE exam_id = #{examId} AND student_id = #{studentId}
+    </select>
+    <select id="findByStatus" resultMap="examRecordMap">SELECT * FROM exam_records WHERE status = #{status}</select>
+    <select id="findByExamIdAndStatus" resultMap="examRecordMap">
+        SELECT * FROM exam_records WHERE exam_id = #{examId} AND status = #{status}
+    </select>
+    <select id="findByStudentNameContaining" resultMap="examRecordMap">
+        SELECT * FROM exam_records WHERE student_name LIKE CONCAT('%',#{studentName},'%')
+    </select>
+    <select id="findByStudentNameContainingAndStatus" resultMap="examRecordMap">
+        SELECT * FROM exam_records WHERE student_name LIKE CONCAT('%',#{studentName},'%') AND status = #{status}
+    </select>
+    <select id="findByExamIdAndStudentNameContaining" resultMap="examRecordMap">
+        SELECT * FROM exam_records WHERE exam_id = #{examId} AND student_name LIKE CONCAT('%',#{studentName},'%')
+    </select>
+    <select id="findByExamIdAndStudentNameContainingAndStatus" resultMap="examRecordMap">
+        SELECT * FROM exam_records WHERE exam_id = #{examId} AND student_name LIKE CONCAT('%',#{studentName},'%') AND status = #{status}
+    </select>
+
+    <select id="countByExamIdAndStatus" resultType="long">
+        SELECT COUNT(*) FROM exam_records WHERE exam_id = #{examId} AND status = #{status}
+    </select>
+    <select id="countByExamIdAndStatusAndTotalScoreGreaterThanEqual" resultType="long">
+        SELECT COUNT(*) FROM exam_records WHERE exam_id = #{examId} AND status = #{status} AND total_score >= #{minScore}
+    </select>
+
+    <select id="findInProgressRecords" resultMap="examRecordMap">SELECT * FROM exam_records WHERE status = 1</select>
+    <select id="findCompletedRecords" resultMap="examRecordMap">SELECT * FROM exam_records WHERE status IN (2, 3)</select>
+
+    <select id="findCompletedRecordsByStudent" resultMap="examRecordMap">
+        SELECT * FROM exam_records WHERE student_id = #{studentId} AND status IN (2, 3)
+    </select>
+    <select id="findCompletedRecordsByExam" resultMap="examRecordMap">
+        SELECT * FROM exam_records WHERE exam_id = #{examId} AND status IN (2, 3)
+    </select>
+
+    <select id="countByExamId" resultType="long">SELECT COUNT(*) FROM exam_records WHERE exam_id = #{examId}</select>
+    <select id="countCompletedByExamId" resultType="long">
+        SELECT COUNT(*) FROM exam_records WHERE exam_id = #{examId} AND status IN (2, 3)
+    </select>
+    <select id="countByStudentId" resultType="long">SELECT COUNT(*) FROM exam_records WHERE student_id = #{studentId}</select>
+    <select id="countCompletedByStudentId" resultType="long">
+        SELECT COUNT(*) FROM exam_records WHERE student_id = #{studentId} AND status IN (2, 3)
+    </select>
+
+    <select id="existsByExamIdAndStudentId" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM exam_records WHERE exam_id = #{examId} AND student_id = #{studentId}
+    </select>
+
+    <!-- Score statistics -->
+    <select id="getAverageScoreByExamId" resultType="java.math.BigDecimal">
+        SELECT AVG(score) FROM exam_records WHERE exam_id = #{examId} AND status IN (2, 3) AND score IS NOT NULL
+    </select>
+    <select id="getAverageScoreByExamIdAndStatus" resultType="java.math.BigDecimal">
+        SELECT AVG(score) FROM exam_records WHERE exam_id = #{examId} AND status = #{status} AND score IS NOT NULL
+    </select>
+    <select id="getMaxScoreByExamId" resultType="java.math.BigDecimal">
+        SELECT MAX(score) FROM exam_records WHERE exam_id = #{examId} AND status IN (2, 3)
+    </select>
+    <select id="getMaxScoreByExamIdAndStatus" resultType="java.math.BigDecimal">
+        SELECT MAX(score) FROM exam_records WHERE exam_id = #{examId} AND status = #{status}
+    </select>
+    <select id="getMinScoreByExamId" resultType="java.math.BigDecimal">
+        SELECT MIN(score) FROM exam_records WHERE exam_id = #{examId} AND status IN (2, 3)
+    </select>
+    <select id="getMinScoreByExamIdAndStatus" resultType="java.math.BigDecimal">
+        SELECT MIN(score) FROM exam_records WHERE exam_id = #{examId} AND status = #{status}
+    </select>
+    <select id="getAverageScoreByStudentId" resultType="java.math.BigDecimal">
+        SELECT AVG(score) FROM exam_records WHERE student_id = #{studentId} AND status IN (2, 3) AND score IS NOT NULL
+    </select>
+
+    <select id="countPassedByExamId" resultType="long">
+        SELECT COUNT(*) FROM exam_records er
+        JOIN exams e ON er.exam_id = e.id
+        WHERE er.exam_id = #{examId} AND er.status IN (2, 3) AND er.score >= e.pass_score
+    </select>
+    <select id="countFailedByExamId" resultType="long">
+        SELECT COUNT(*) FROM exam_records er
+        JOIN exams e ON er.exam_id = e.id
+        WHERE er.exam_id = #{examId} AND er.status IN (2, 3) AND er.score &lt; e.pass_score
+    </select>
+
+    <select id="findTimeoutRecords" resultMap="examRecordMap">SELECT * FROM exam_records WHERE status = 3</select>
+    <select id="findByTimeRange" resultMap="examRecordMap">
+        SELECT * FROM exam_records WHERE start_time >= #{startTime} AND start_time &lt;= #{endTime}
+    </select>
+    <select id="findRecentRecords" resultMap="examRecordMap">
+        SELECT * FROM exam_records ORDER BY created_at DESC
+    </select>
+    <select id="findRecentRecordsByStudent" resultMap="examRecordMap">
+        SELECT * FROM exam_records WHERE student_id = #{studentId} ORDER BY created_at DESC
+    </select>
+    <select id="findRecentExamRecordsByStudentId" resultMap="examRecordMap">
+        SELECT * FROM exam_records WHERE student_id = #{studentId} ORDER BY created_at DESC
+    </select>
+    <select id="findRecentRecordsByExam" resultMap="examRecordMap">
+        SELECT * FROM exam_records WHERE exam_id = #{examId} ORDER BY created_at DESC
+    </select>
+
+    <update id="updateStatus">
+        UPDATE exam_records SET status = #{status}, updated_at = #{updateTime} WHERE id = #{id}
+    </update>
+    <update id="updateScore">
+        UPDATE exam_records SET score = #{score}, correct_count = #{correctCount},
+        wrong_count = #{wrongCount}, unanswered_count = #{unansweredCount}, updated_at = #{updateTime}
+        WHERE id = #{id}
+    </update>
+    <update id="timeoutInProgressRecords">
+        UPDATE exam_records er SET er.status = 3, er.submit_time = #{submitTime},
+        er.end_time = #{submitTime}, er.updated_at = #{updateTime}
+        WHERE er.status = 1 AND er.start_time IS NOT NULL
+        AND TIMESTAMPDIFF(MINUTE, er.start_time, #{submitTime}) >=
+        (SELECT e.duration FROM exams e WHERE e.id = er.exam_id)
+    </update>
+
+    <delete id="deleteByExamId">DELETE FROM exam_records WHERE exam_id = #{examId}</delete>
+    <delete id="deleteByStudentId">DELETE FROM exam_records WHERE student_id = #{studentId}</delete>
+
+    <select id="countByStatus" resultType="long">SELECT COUNT(*) FROM exam_records WHERE status = #{status}</select>
+    <select id="findTop10ByOrderByCreatedAtDesc" resultMap="examRecordMap">
+        SELECT * FROM exam_records ORDER BY created_at DESC LIMIT 10
+    </select>
+    <select id="findByCreatedAtAfter" resultMap="examRecordMap">
+        SELECT * FROM exam_records WHERE created_at > #{createdAt}
+    </select>
+    <select id="countByCreatedAtBetween" resultType="long">
+        SELECT COUNT(*) FROM exam_records WHERE created_at BETWEEN #{startTime} AND #{endTime}
+    </select>
+    <select id="countByStatusAndSubmitTimeBetween" resultType="long">
+        SELECT COUNT(*) FROM exam_records WHERE status = #{status} AND submit_time BETWEEN #{startTime} AND #{endTime}
+    </select>
+</mapper>

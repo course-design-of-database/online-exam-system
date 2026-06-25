@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.bishe.question.mapper.ExamMapper">
+
+    <resultMap id="examMap" type="org.bishe.question.entity.Exam">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="duration" column="duration"/>
+        <result property="totalScore" column="total_score"/>
+        <result property="passScore" column="pass_score"/>
+        <result property="questionCount" column="question_count"/>
+        <result property="status" column="status"/>
+        <result property="createdBy" column="created_by"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="examMap">SELECT * FROM exams WHERE id = #{id}</select>
+    <select id="findAll" resultMap="examMap">SELECT * FROM exams ORDER BY id DESC</select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO exams (title, description, start_time, end_time, duration, total_score, pass_score, question_count, status, created_by, created_at, updated_at)
+        VALUES (#{title}, #{description}, #{startTime}, #{endTime}, #{duration}, #{totalScore}, #{passScore}, #{questionCount}, #{status}, #{createdBy}, NOW(), NOW())
+    </insert>
+
+    <update id="update">
+        UPDATE exams <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="duration != null">duration = #{duration},</if>
+            <if test="totalScore != null">total_score = #{totalScore},</if>
+            <if test="passScore != null">pass_score = #{passScore},</if>
+            <if test="questionCount != null">question_count = #{questionCount},</if>
+            <if test="status != null">status = #{status},</if>
+            updated_at = NOW()
+        </set> WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">DELETE FROM exams WHERE id = #{id}</delete>
+    <select id="existsById" resultType="boolean">SELECT COUNT(*) > 0 FROM exams WHERE id = #{id}</select>
+    <select id="count" resultType="long">SELECT COUNT(*) FROM exams</select>
+
+    <select id="findByStatus" resultMap="examMap">SELECT * FROM exams WHERE status = #{status}</select>
+    <select id="findByCreatedBy" resultMap="examMap">SELECT * FROM exams WHERE created_by = #{createdBy}</select>
+    <select id="findByTitleContaining" resultMap="examMap">
+        SELECT * FROM exams WHERE title LIKE CONCAT('%',#{title},'%')
+    </select>
+
+    <select id="findActiveExams" resultMap="examMap">
+        SELECT * FROM exams WHERE status = 1 AND start_time &lt;= #{now} AND end_time > #{now}
+    </select>
+    <select id="findUpcomingExams" resultMap="examMap">
+        SELECT * FROM exams WHERE status = 1 AND start_time > #{now}
+    </select>
+    <select id="findFinishedExams" resultMap="examMap">
+        SELECT * FROM exams WHERE status = 2 OR end_time &lt;= #{now}
+    </select>
+    <select id="findByTimeRange" resultMap="examMap">
+        SELECT * FROM exams WHERE start_time >= #{startTime} AND end_time &lt;= #{endTime}
+    </select>
+    <select id="findAvailableExamsForStudent" resultMap="examMap">
+        SELECT e.* FROM exams e WHERE e.status = 1 AND e.end_time > #{now}
+        AND NOT EXISTS (
+            SELECT 1 FROM exam_records er WHERE er.exam_id = e.id AND er.student_id = #{studentId} AND er.status IN (2, 3)
+        )
+    </select>
+    <select id="findExamsByStudent" resultMap="examMap">
+        SELECT DISTINCT e.* FROM exams e
+        WHERE EXISTS (SELECT 1 FROM exam_records er WHERE er.exam_id = e.id AND er.student_id = #{studentId})
+    </select>
+
+    <select id="countByStatus" resultType="long">SELECT COUNT(*) FROM exams WHERE status = #{status}</select>
+    <select id="countByCreatedBy" resultType="long">SELECT COUNT(*) FROM exams WHERE created_by = #{createdBy}</select>
+
+    <select id="findTop5ByOrderByCreatedAtDesc" resultMap="examMap">
+        SELECT * FROM exams ORDER BY created_at DESC LIMIT 5
+    </select>
+    <select id="findRecentExams" resultMap="examMap">
+        SELECT * FROM exams ORDER BY created_at DESC
+    </select>
+
+    <select id="findByIdAndCreatedBy" resultMap="examMap">
+        SELECT * FROM exams WHERE id = #{id} AND created_by = #{createdBy}
+    </select>
+
+    <select id="existsByTitle" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM exams WHERE title = #{title}
+    </select>
+    <select id="existsByTitleAndIdNot" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM exams WHERE title = #{title} AND id != #{excludeId}
+    </select>
+
+    <update id="updateStatus">
+        UPDATE exams SET status = #{status}, updated_at = #{updateTime} WHERE id = #{id}
+    </update>
+    <update id="updateExpiredExamsStatus">
+        UPDATE exams SET status = 2, updated_at = #{updateTime}
+        WHERE status = 1 AND end_time &lt;= #{now}
+    </update>
+</mapper>

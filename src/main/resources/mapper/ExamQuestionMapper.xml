@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.bishe.question.mapper.ExamQuestionMapper">
+
+    <resultMap id="examQuestionMap" type="org.bishe.question.entity.ExamQuestion">
+        <id property="id" column="id"/>
+        <result property="examId" column="exam_id"/>
+        <result property="questionId" column="question_id"/>
+        <result property="questionOrder" column="question_order"/>
+        <result property="score" column="score"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="findById" resultMap="examQuestionMap">SELECT * FROM exam_questions WHERE id = #{id}</select>
+    <select id="findAll" resultMap="examQuestionMap">SELECT * FROM exam_questions ORDER BY id</select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO exam_questions (exam_id, question_id, question_order, score, created_at)
+        VALUES (#{examId}, #{questionId}, #{questionOrder}, #{score}, NOW())
+    </insert>
+
+    <update id="update">
+        UPDATE exam_questions <set>
+            <if test="examId != null">exam_id = #{examId},</if>
+            <if test="questionId != null">question_id = #{questionId},</if>
+            <if test="questionOrder != null">question_order = #{questionOrder},</if>
+            <if test="score != null">score = #{score},</if>
+        </set> WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">DELETE FROM exam_questions WHERE id = #{id}</delete>
+    <select id="count" resultType="long">SELECT COUNT(*) FROM exam_questions</select>
+
+    <select id="findByExamId" resultMap="examQuestionMap">
+        SELECT * FROM exam_questions WHERE exam_id = #{examId}
+    </select>
+    <select id="findByExamIdOrderByQuestionOrder" resultMap="examQuestionMap">
+        SELECT * FROM exam_questions WHERE exam_id = #{examId} ORDER BY question_order
+    </select>
+    <select id="findByQuestionId" resultMap="examQuestionMap">
+        SELECT * FROM exam_questions WHERE question_id = #{questionId}
+    </select>
+    <select id="findByExamIdAndQuestionId" resultMap="examQuestionMap">
+        SELECT * FROM exam_questions WHERE exam_id = #{examId} AND question_id = #{questionId}
+    </select>
+    <select id="findByExamIdAndQuestionOrder" resultMap="examQuestionMap">
+        SELECT * FROM exam_questions WHERE exam_id = #{examId} AND question_order = #{questionOrder}
+    </select>
+    <select id="countByExamId" resultType="long">
+        SELECT COUNT(*) FROM exam_questions WHERE exam_id = #{examId}
+    </select>
+    <select id="countByQuestionId" resultType="long">
+        SELECT COUNT(*) FROM exam_questions WHERE question_id = #{questionId}
+    </select>
+
+    <select id="calculateTotalScoreByExamId" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(score), 0) FROM exam_questions WHERE exam_id = #{examId}
+    </select>
+    <select id="getMaxQuestionOrderByExamId" resultType="int">
+        SELECT COALESCE(MAX(question_order), 0) FROM exam_questions WHERE exam_id = #{examId}
+    </select>
+
+    <select id="existsByExamIdAndQuestionId" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM exam_questions WHERE exam_id = #{examId} AND question_id = #{questionId}
+    </select>
+    <select id="existsByExamIdAndQuestionOrder" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM exam_questions WHERE exam_id = #{examId} AND question_order = #{questionOrder}
+    </select>
+
+    <delete id="deleteByExamId">DELETE FROM exam_questions WHERE exam_id = #{examId}</delete>
+    <delete id="deleteByQuestionId">DELETE FROM exam_questions WHERE question_id = #{questionId}</delete>
+    <delete id="deleteByExamIdAndQuestionId">
+        DELETE FROM exam_questions WHERE exam_id = #{examId} AND question_id = #{questionId}
+    </delete>
+
+    <update id="updateQuestionOrder">
+        UPDATE exam_questions SET question_order = #{newOrder}
+        WHERE exam_id = #{examId} AND question_id = #{questionId}
+    </update>
+    <update id="updateQuestionScore">
+        UPDATE exam_questions SET score = #{score}
+        WHERE exam_id = #{examId} AND question_id = #{questionId}
+    </update>
+    <update id="adjustQuestionOrderAfterDelete">
+        UPDATE exam_questions SET question_order = question_order - 1
+        WHERE exam_id = #{examId} AND question_order > #{deletedOrder}
+    </update>
+
+    <select id="findByExamIdAndOrderRange" resultMap="examQuestionMap">
+        SELECT * FROM exam_questions
+        WHERE exam_id = #{examId} AND question_order >= #{startOrder} AND question_order &lt;= #{endOrder}
+        ORDER BY question_order
+    </select>
+    <select id="findHighestScoreQuestionsByExamId" resultMap="examQuestionMap">
+        SELECT * FROM exam_questions WHERE exam_id = #{examId}
+        AND score = (SELECT MAX(eq2.score) FROM exam_questions eq2 WHERE eq2.exam_id = #{examId})
+    </select>
+    <select id="findLowestScoreQuestionsByExamId" resultMap="examQuestionMap">
+        SELECT * FROM exam_questions WHERE exam_id = #{examId}
+        AND score = (SELECT MIN(eq2.score) FROM exam_questions eq2 WHERE eq2.exam_id = #{examId})
+    </select>
+</mapper>
